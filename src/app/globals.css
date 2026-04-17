@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+:root {
+  --bg-gradient-from: #fff0f5;
+  --bg-gradient-to: #fffaf0;
+  --card-bg: #ffffff;
+  --text-primary: #4a3728;
+  --text-secondary: #8b7355;
+  --accent: #f08080;
+  --accent-hover: #e06060;
+  --success: #66bb6a;
+  --warning: #ffa726;
+  --danger: #ef5350;
+  --border: #f0e0d6;
+}
+
+body {
+  background: linear-gradient(135deg, var(--bg-gradient-from), var(--bg-gradient-to));
+  color: var(--text-primary);
+  font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+  min-height: 100dvh;
+}
+
+/* ゲームカード */
+.game-card {
+  background: var(--card-bg);
+  border-radius: 1rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--border);
+}
+
+/* ステータスバー */
+.status-bar {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #f0e0d6;
+  overflow: hidden;
+}
+
+.status-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+}
+
+/* アクションボタン */
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 4.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn .cooldown-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.1);
+  transition: height 0.5s linear;
+}
+
+/* 赤ちゃんアニメーション */
+@keyframes baby-idle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes baby-cry {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-3px) rotate(-2deg); }
+  75% { transform: translateX(3px) rotate(2deg); }
+}
+
+@keyframes baby-sleep {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes baby-sick {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes baby-happy {
+  0%, 100% { transform: translateY(0) scale(1); }
+  25% { transform: translateY(-6px) scale(1.05); }
+  75% { transform: translateY(-3px) scale(1.02); }
+}
+
+@keyframes float-up {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-40px); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes overlay-in {
+  0% { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-idle { animation: baby-idle 2s ease-in-out infinite; }
+.animate-cry { animation: baby-cry 0.3s ease-in-out infinite; }
+.animate-sleep { animation: baby-sleep 3s ease-in-out infinite; }
+.animate-sick { animation: baby-sick 2s ease-in-out infinite; }
+.animate-happy { animation: baby-happy 0.6s ease-in-out; }
+.animate-float-up { animation: float-up 1s ease-out forwards; }
+.animate-sparkle { animation: sparkle 0.6s ease-out; }
+.animate-overlay-in { animation: overlay-in 0.3s ease-out; }

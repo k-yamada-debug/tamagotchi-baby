@@ -131,6 +131,8 @@ export function StartScreen({ onStart }: StartScreenProps) {
           position: 'absolute',
           width: w,
           height: h,
+          maxWidth: 'none',
+          maxHeight: 'none',
           left: (CROP_SIZE - w) / 2 + pan.x,
           top: (CROP_SIZE - h) / 2 + pan.y,
           userSelect: 'none',

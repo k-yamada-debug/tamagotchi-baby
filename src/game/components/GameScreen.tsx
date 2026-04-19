@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { GameState, CareActionType } from '../types';
 import { CARE_ACTIONS } from '../constants';
 import { StageInfo } from './StageInfo';
@@ -9,7 +9,21 @@ import { StatusBars } from './StatusBars';
 import { ActionPanel } from './ActionPanel';
 import { EventOverlay } from './EventOverlay';
 import { MilestoneLog } from './MilestoneLog';
-import { MessagePanel } from './MessagePanel';
+import { MessagePanel, ChatMessage } from './MessagePanel';
+
+const CHAT_STORAGE_PREFIX = 'tamagotchi-chat-';
+const CHAT_MAX_MESSAGES = 200;
+
+function initialBabyMessage(stage: GameState['currentStage']): string {
+  switch (stage) {
+    case 'newborn': return 'ばぶ〜';
+    case 'infant': return 'あばー！';
+    case 'toddler': return 'ママ〜！';
+    case 'preschooler': return 'ママ、おはなししよ！';
+    case 'elementary': return 'ママ、聞いて！';
+    default: return '…なに？';
+  }
+}
 
 interface GameScreenProps {
   state: GameState;
@@ -26,6 +40,43 @@ export function GameScreen({ state, onCare, onResolveEvent, onSetTimeScale, onRe
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [feedbackKey, setFeedbackKey] = useState(0);
   const [showEventOverlay, setShowEventOverlay] = useState<string | null>(null);
+
+  // ===== チャット履歴: ベビーごとに localStorage へ保存して永続化 =====
+  const chatKey = `${CHAT_STORAGE_PREFIX}${state.birthTimestamp}`;
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatLoaded, setChatLoaded] = useState(false);
+
+  // 初回ロード
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(chatKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as ChatMessage[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setChatMessages(parsed);
+          setChatLoaded(true);
+          return;
+        }
+      }
+    } catch {
+      // 無視
+    }
+    setChatMessages([
+      { id: 0, sender: 'baby', text: initialBabyMessage(state.currentStage), timestamp: Date.now() },
+    ]);
+    setChatLoaded(true);
+  }, [chatKey, state.currentStage]);
+
+  // 変更時に保存
+  useEffect(() => {
+    if (!chatLoaded) return;
+    try {
+      const toSave = chatMessages.slice(-CHAT_MAX_MESSAGES);
+      localStorage.setItem(chatKey, JSON.stringify(toSave));
+    } catch {
+      // ストレージ満杯など
+    }
+  }, [chatMessages, chatKey, chatLoaded]);
 
   if (state.activeEvent && state.activeEvent.id !== showEventOverlay && showEventOverlay !== `dismissed_${state.activeEvent.id}`) {
     setShowEventOverlay(state.activeEvent.id);
@@ -120,13 +171,15 @@ export function GameScreen({ state, onCare, onResolveEvent, onSetTimeScale, onRe
       )}
 
       {/* メッセージパネル */}
-      {showMessages && (
+      {showMessages && chatLoaded && (
         <MessagePanel
           stage={state.currentStage}
           status={state.status}
           babyName={state.babyName}
           isSick={state.isSick}
           isCrying={state.isCrying}
+          messages={chatMessages}
+          onMessagesChange={setChatMessages}
           onClose={() => setShowMessages(false)}
         />
       )}

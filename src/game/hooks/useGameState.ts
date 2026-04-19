@@ -35,8 +35,17 @@ export function useGameState() {
     dispatch({ type: 'TICK', now: Date.now() });
   }, []);
 
-  const startGame = useCallback((babyName: string, gender: 'boy' | 'girl', timeScale: number) => {
-    dispatch({ type: 'START_GAME', babyName, gender, timeScale, now: Date.now() });
+  const startGame = useCallback((
+    babyName: string,
+    gender: 'boy' | 'girl',
+    timeScale: number,
+    photoDataUrl: string | null = null,
+  ) => {
+    dispatch({ type: 'START_GAME', babyName, gender, timeScale, photoDataUrl, now: Date.now() });
+  }, []);
+
+  const setPhoto = useCallback((photoDataUrl: string | null) => {
+    dispatch({ type: 'SET_PHOTO', photoDataUrl });
   }, []);
 
   const performCare = useCallback((action: CareActionType) => {
@@ -64,6 +73,7 @@ export function useGameState() {
     performCare,
     resolveEvent,
     setTimeScale,
+    setPhoto,
     resetGame,
   };
 }

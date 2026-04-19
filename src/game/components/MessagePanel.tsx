@@ -470,6 +470,15 @@ function generateBabyResponse(
   return 'ばぶー';
 }
 
+const QUICK_REPLIES: Record<LifeStage, string[]> = {
+  newborn: ['ばぁ！', 'かわいいね', 'いいこいいこ', 'ねんねしよ'],
+  infant: ['ママだよ〜', 'かわいい♡', 'おはよう', 'いいこね'],
+  toddler: ['だいすき❤️', 'かわいいね', 'えらいえらい', 'あそぼ！'],
+  preschooler: ['がんばったね', 'だいすき❤️', 'ようちえんどうだった？', 'えらいね！'],
+  elementary: ['おかえり！', '学校どうだった？', 'がんばれ！', 'だいすきだよ'],
+  middleSchool: ['おかえり', '元気？', 'がんばってね', 'ごはんできたよ'],
+};
+
 export function MessagePanel({ stage, status, babyName, isSick, isCrying, onClose }: MessagePanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -485,27 +494,40 @@ export function MessagePanel({ stage, status, babyName, isSick, isCrying, onClos
     },
   ]);
   const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const replyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages, isTyping]);
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
+  // モーダル表示中は背景スクロールを止める
+  useEffect(() => {
+    document.body.classList.add('modal-open');
+    return () => {
+      document.body.classList.remove('modal-open');
+      if (replyTimerRef.current) clearTimeout(replyTimerRef.current);
+    };
+  }, []);
+
+  const postMessage = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
 
     const parentMsg: ChatMessage = {
       id: Date.now(),
       sender: 'parent',
-      text: input.trim(),
+      text: trimmed,
       timestamp: Date.now(),
     };
-
     setMessages(prev => [...prev, parentMsg]);
-    setInput('');
+    setIsTyping(true);
 
-    setTimeout(() => {
-      const response = generateBabyResponse(input.trim(), stage, status, babyName, isSick, isCrying);
+    if (replyTimerRef.current) clearTimeout(replyTimerRef.current);
+    replyTimerRef.current = setTimeout(() => {
+      const response = generateBabyResponse(trimmed, stage, status, babyName, isSick, isCrying);
       const babyMsg: ChatMessage = {
         id: Date.now() + 1,
         sender: 'baby',
@@ -513,73 +535,209 @@ export function MessagePanel({ stage, status, babyName, isSick, isCrying, onClos
         timestamp: Date.now(),
       };
       setMessages(prev => [...prev, babyMsg]);
-    }, 500 + Math.random() * 1000);
+      setIsTyping(false);
+    }, 600 + Math.random() * 900);
+  };
+
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    postMessage(input);
+    setInput('');
+    inputRef.current?.focus();
+  };
+
+  const handleQuickReply = (text: string) => {
+    postMessage(text);
+  };
+
+  const formatTime = (ts: number) => {
+    const d = new Date(ts);
+    return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-2 bg-black/30">
-      <div className="animate-overlay-in max-w-lg w-full rounded-t-2xl game-card flex flex-col"
-        style={{ maxHeight: '70vh' }}>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 animate-fade-in"
+      onClick={onClose}
+    >
+      <div
+        className="animate-sheet-in w-full max-w-lg flex flex-col"
+        style={{
+          background: 'var(--card-bg)',
+          borderTopLeftRadius: '1.25rem',
+          borderTopRightRadius: '1.25rem',
+          height: '85dvh',
+          maxHeight: '85dvh',
+          boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* ドラッグハンドル */}
+        <div className="flex justify-center pt-2 pb-1 shrink-0">
+          <div className="w-10 h-1 rounded-full" style={{ background: 'var(--border)' }} />
+        </div>
+
         {/* ヘッダー */}
-        <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
-          <div className="flex items-center gap-2">
-            <span className="text-xl">💬</span>
-            <span className="font-bold">{babyName}とおはなし</span>
+        <div
+          className="flex items-center justify-between px-4 py-2 border-b shrink-0"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0"
+              style={{ background: '#ffe0c2' }}
+            >
+              👶
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-base truncate">{babyName}</span>
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                {isSick ? '🤒 体調わるい' : isCrying ? '😭 泣いてる' : '🟢 オンライン'}
+              </span>
+            </div>
           </div>
-          <button onClick={onClose} className="text-xl hover:scale-110 transition-transform">✕</button>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 active:scale-90 transition-transform"
+            style={{ background: '#f5f0eb' }}
+            aria-label="閉じる"
+          >
+            ✕
+          </button>
         </div>
 
         {/* メッセージ一覧 */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ minHeight: '200px' }}>
-          {messages.map(msg => (
-            <div key={msg.id} className={`flex ${msg.sender === 'parent' ? 'justify-end' : 'justify-start'}`}>
-              {msg.sender === 'baby' && (
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 mr-2"
-                  style={{ background: '#ffe0c2' }}>
-                  👶
-                </div>
-              )}
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain px-3 py-3 space-y-2"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          {messages.map((msg, idx) => {
+            const prev = messages[idx - 1];
+            const showAvatar = !prev || prev.sender !== msg.sender;
+            return (
               <div
-                className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm ${
-                  msg.sender === 'parent'
-                    ? 'rounded-tr-sm text-white'
-                    : 'rounded-tl-sm'
-                }`}
-                style={{
-                  background: msg.sender === 'parent' ? 'var(--accent)' : '#f5f0eb',
-                  color: msg.sender === 'parent' ? 'white' : 'var(--text-primary)',
-                }}
+                key={msg.id}
+                className={`flex items-end gap-1.5 ${msg.sender === 'parent' ? 'justify-end' : 'justify-start'}`}
               >
-                {msg.text}
-              </div>
-              {msg.sender === 'parent' && (
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ml-2"
-                  style={{ background: '#e8f5e9' }}>
-                  👩
+                {msg.sender === 'baby' && (
+                  <div
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0 ${showAvatar ? '' : 'invisible'}`}
+                    style={{ background: '#ffe0c2' }}
+                  >
+                    👶
+                  </div>
+                )}
+                <div className="flex flex-col max-w-[75%]" style={{ alignItems: msg.sender === 'parent' ? 'flex-end' : 'flex-start' }}>
+                  <div
+                    className={`px-3.5 py-2 text-[15px] leading-relaxed break-words ${
+                      msg.sender === 'parent'
+                        ? 'rounded-[1.25rem] rounded-br-md text-white'
+                        : 'rounded-[1.25rem] rounded-bl-md'
+                    }`}
+                    style={{
+                      background: msg.sender === 'parent' ? 'var(--accent)' : '#f5f0eb',
+                      color: msg.sender === 'parent' ? 'white' : 'var(--text-primary)',
+                    }}
+                  >
+                    {msg.text}
+                  </div>
+                  <span className="text-[10px] mt-0.5 px-1" style={{ color: 'var(--text-secondary)' }}>
+                    {formatTime(msg.timestamp)}
+                  </span>
                 </div>
-              )}
+                {msg.sender === 'parent' && (
+                  <div
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0 ${showAvatar ? '' : 'invisible'}`}
+                    style={{ background: '#e8f5e9' }}
+                  >
+                    👩
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* タイピングインジケータ */}
+          {isTyping && (
+            <div className="flex items-end gap-1.5 justify-start">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0" style={{ background: '#ffe0c2' }}>
+                👶
+              </div>
+              <div
+                className="px-3.5 py-2.5 rounded-[1.25rem] rounded-bl-md flex gap-1"
+                style={{ background: '#f5f0eb' }}
+              >
+                <span className="typing-dot" />
+                <span className="typing-dot" style={{ animationDelay: '0.15s' }} />
+                <span className="typing-dot" style={{ animationDelay: '0.3s' }} />
+              </div>
             </div>
-          ))}
+          )}
+
           <div ref={messagesEndRef} />
         </div>
 
+        {/* クイック返信 */}
+        <div
+          className="shrink-0 px-3 py-2 border-t overflow-x-auto flex gap-2"
+          style={{
+            borderColor: 'var(--border)',
+            scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          {QUICK_REPLIES[stage].map(text => (
+            <button
+              key={text}
+              onClick={() => handleQuickReply(text)}
+              disabled={isTyping}
+              className="shrink-0 px-3 py-1.5 rounded-full text-sm border active:scale-95 transition-transform disabled:opacity-50"
+              style={{
+                borderColor: 'var(--border)',
+                background: 'var(--card-bg)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              {text}
+            </button>
+          ))}
+        </div>
+
         {/* 入力エリア */}
-        <div className="p-3 border-t flex gap-2" style={{ borderColor: 'var(--border)' }}>
+        <div
+          className="shrink-0 px-3 pt-2 border-t flex gap-2 items-end"
+          style={{
+            borderColor: 'var(--border)',
+            paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)',
+          }}
+        >
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') sendMessage(); }}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) sendMessage(); }}
             placeholder={`${babyName}に話しかける…`}
-            className="flex-1 px-4 py-2 rounded-full border focus:outline-none focus:ring-2 text-sm"
-            style={{ borderColor: 'var(--border)', '--tw-ring-color': 'var(--accent)' } as React.CSSProperties}
+            enterKeyHint="send"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            className="flex-1 px-4 py-2.5 rounded-full border focus:outline-none focus:ring-2"
+            style={{
+              borderColor: 'var(--border)',
+              background: '#faf6f2',
+              '--tw-ring-color': 'var(--accent)',
+              fontSize: '16px',
+            } as React.CSSProperties}
           />
           <button
             onClick={sendMessage}
-            className="px-4 py-2 rounded-full text-white font-bold text-sm transition-colors"
+            disabled={!input.trim()}
+            className="w-11 h-11 shrink-0 rounded-full text-white font-bold flex items-center justify-center active:scale-90 transition-transform disabled:opacity-40"
             style={{ background: 'var(--accent)' }}
+            aria-label="送信"
           >
-            送信
+            ↑
           </button>
         </div>
       </div>

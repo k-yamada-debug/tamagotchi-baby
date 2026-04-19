@@ -12,6 +12,15 @@
   --warning: #ffa726;
   --danger: #ef5350;
   --border: #f0e0d6;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+  --safe-right: env(safe-area-inset-right);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 body {
@@ -19,6 +28,20 @@ body {
   color: var(--text-primary);
   font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
   min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
+}
+
+/* モーダル表示中は背景スクロールを止める */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* iOS のフォーム自動ズーム防止 (フォントサイズ16px以上) */
+input, textarea, select {
+  font-size: 16px;
 }
 
 /* ゲームカード */
@@ -48,31 +71,58 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.5rem 0.25rem;
   border-radius: 0.75rem;
   background: var(--card-bg);
   border: 2px solid var(--border);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
   min-width: 4.5rem;
+  min-height: 4.5rem;
   position: relative;
   overflow: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .action-btn:hover:not(:disabled) {
   border-color: var(--accent);
-  transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .action-btn:active:not(:disabled) {
-  transform: translateY(0);
+  transform: scale(0.95);
+  border-color: var(--accent);
 }
 
 .action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* スクロール可能なアクション一覧 (横スクロール対応) */
+.action-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0.125rem;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.action-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.action-scroll > * {
+  flex-shrink: 0;
+  scroll-snap-align: start;
 }
 
 .action-btn .cooldown-overlay {
@@ -127,6 +177,16 @@ body {
   100% { opacity: 1; transform: scale(1); }
 }
 
+@keyframes sheet-in {
+  0% { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
 .animate-idle { animation: baby-idle 2s ease-in-out infinite; }
 .animate-cry { animation: baby-cry 0.3s ease-in-out infinite; }
 .animate-sleep { animation: baby-sleep 3s ease-in-out infinite; }
@@ -135,3 +195,21 @@ body {
 .animate-float-up { animation: float-up 1s ease-out forwards; }
 .animate-sparkle { animation: sparkle 0.6s ease-out; }
 .animate-overlay-in { animation: overlay-in 0.3s ease-out; }
+.animate-sheet-in { animation: sheet-in 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+.animate-fade-in { animation: fade-in 0.2s ease-out; }
+
+/* タイピングインジケータ */
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--text-secondary);
+  display: inline-block;
+  align-self: center;
+  animation: typing-bounce 1s ease-in-out infinite;
+}
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}

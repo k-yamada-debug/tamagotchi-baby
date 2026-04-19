@@ -387,14 +387,6 @@ function BabyPhotoFace({ expression, photoDataUrl }: { expression: Expression; p
                 background: 'radial-gradient(ellipse at center, rgba(255,143,163,0.55), transparent 70%)',
               }}
             />
-            {/* 笑顔の口元を写真の上に描画 */}
-            <svg
-              className="absolute pointer-events-none"
-              style={{ left: '25%', bottom: '15%', width: '50%', height: '20%' }}
-              viewBox="0 0 100 40"
-            >
-              <path d="M 10 10 Q 50 38 90 10" stroke="#d4726a" strokeWidth="4" fill="none" strokeLinecap="round" />
-            </svg>
           </>
         )}
 
@@ -423,15 +415,6 @@ function BabyPhotoFace({ expression, photoDataUrl }: { expression: Expression; p
                 boxShadow: '0 0 4px rgba(135,206,235,0.6)',
               }}
             />
-            {expression === 'crying' && (
-              <svg
-                className="absolute pointer-events-none"
-                style={{ left: '30%', bottom: '20%', width: '40%', height: '15%' }}
-                viewBox="0 0 100 40"
-              >
-                <path d="M 10 30 Q 50 5 90 30" stroke="#b4423a" strokeWidth="4" fill="#ff5a6a" strokeLinecap="round" />
-              </svg>
-            )}
           </>
         )}
 
@@ -468,20 +451,6 @@ function BabyPhotoFace({ expression, photoDataUrl }: { expression: Expression; p
             <path d="M 5 5 Q 25 15 45 5" stroke="#2d1b0e" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.7" />
             <path d="M 55 5 Q 75 15 95 5" stroke="#2d1b0e" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.7" />
           </svg>
-        )}
-
-        {/* 病気: 口元にマスク */}
-        {expression === 'sick' && (
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              left: '20%', top: '55%', width: '60%', height: '30%',
-              background: 'linear-gradient(180deg, #fafafa, #e8e8e8)',
-              borderRadius: '45% 45% 40% 40% / 30% 30% 70% 70%',
-              boxShadow: 'inset 0 -2px 4px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.15)',
-              border: '1px solid #d0d0d0',
-            }}
-          />
         )}
 
         {/* 汚い時: 顔にほこり/土汚れ風のシミ */}

@@ -62,10 +62,10 @@ export function StartScreen({ onStart }: StartScreenProps) {
         <div className="border-t pt-6" style={{ borderColor: 'var(--border)' }}>
           <h2 className="font-bold mb-4">あたらしくはじめる</h2>
 
-          {/* 顔写真アップロード */}
+          {/* 顔写真アップロード（任意） */}
           <div className="mb-4">
             <label className="block text-sm mb-2 text-left" style={{ color: 'var(--text-secondary)' }}>
-              おかお写真（任意）
+              おかお写真
             </label>
             <div className="flex flex-col items-center gap-3">
               <div
@@ -112,9 +112,6 @@ export function StartScreen({ onStart }: StartScreenProps) {
                 {photoError}
               </p>
             )}
-            <p className="text-[11px] mt-2 text-left" style={{ color: 'var(--text-secondary)' }}>
-              アップロードすると、状況に応じて写真自体の表情が変わります
-            </p>
           </div>
 
           <div className="mb-4">

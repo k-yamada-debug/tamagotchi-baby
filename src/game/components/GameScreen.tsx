@@ -78,6 +78,7 @@ export function GameScreen({ state, onCare, onResolveEvent, onSetTimeScale, onRe
           isSick={state.isSick}
           status={state.status}
           actionFeedback={actionFeedback}
+          photoDataUrl={state.photoDataUrl}
         />
         {/* メッセージボタン */}
         <button

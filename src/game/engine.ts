@@ -13,6 +13,7 @@ export function createInitialState(): GameState {
   return {
     babyName: '',
     gender: 'girl',
+    photoDataUrl: null,
     birthTimestamp: 0,
     status: { hunger: 80, cleanliness: 80, mood: 80, energy: 80, intelligence: 0, social: 0 },
     isSick: false,
@@ -138,6 +139,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...createInitialState(),
         babyName: action.babyName,
         gender: action.gender,
+        photoDataUrl: action.photoDataUrl,
         timeScale: action.timeScale,
         birthTimestamp: now,
         lastUpdateTimestamp: now,
@@ -155,6 +157,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'SET_TIME_SCALE': {
       return { ...state, timeScale: action.scale };
+    }
+
+    case 'SET_PHOTO': {
+      return { ...state, photoDataUrl: action.photoDataUrl };
     }
 
     case 'TICK': {

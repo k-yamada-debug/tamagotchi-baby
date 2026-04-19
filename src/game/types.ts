@@ -56,6 +56,7 @@ export interface DepletionRates {
 export interface GameState {
   babyName: string;
   gender: 'boy' | 'girl';
+  photoDataUrl: string | null;
   birthTimestamp: number;
 
   status: StatusValues;
@@ -143,7 +144,8 @@ export type GameAction =
   | { type: 'TICK'; now: number }
   | { type: 'PERFORM_CARE'; action: CareActionType; now: number }
   | { type: 'RESOLVE_EVENT'; now: number }
-  | { type: 'START_GAME'; babyName: string; gender: 'boy' | 'girl'; timeScale: number; now: number }
+  | { type: 'START_GAME'; babyName: string; gender: 'boy' | 'girl'; timeScale: number; photoDataUrl: string | null; now: number }
+  | { type: 'SET_PHOTO'; photoDataUrl: string | null }
   | { type: 'LOAD_STATE'; state: GameState }
   | { type: 'SET_TIME_SCALE'; scale: number }
   | { type: 'RESET_GAME' };

@@ -10,6 +10,7 @@ interface BabySpriteProps {
   isSick: boolean;
   status: StatusValues;
   actionFeedback: string | null;
+  photoDataUrl?: string | null;
 }
 
 type Expression = 'happy' | 'normal' | 'hungry' | 'dirty' | 'tired' | 'sad' | 'crying' | 'sick' | 'sleeping';
@@ -265,6 +266,130 @@ function BabyFaceSVG({ expression, stage, gender }: {
   );
 }
 
+// 写真版の顔: 表情に応じてフィルタ・装飾を合成
+function getPhotoFilter(expression: Expression): string {
+  switch (expression) {
+    case 'sick':     return 'saturate(0.5) brightness(0.92) hue-rotate(80deg)';
+    case 'sleeping': return 'brightness(0.85) blur(0.3px)';
+    case 'tired':    return 'brightness(0.92) saturate(0.85)';
+    case 'crying':   return 'saturate(1.1) brightness(0.98)';
+    case 'sad':      return 'saturate(0.75) brightness(0.95)';
+    case 'hungry':   return 'saturate(0.9) brightness(0.97)';
+    case 'dirty':    return 'saturate(0.7) sepia(0.15) brightness(0.93)';
+    case 'happy':    return 'saturate(1.2) brightness(1.05) contrast(1.05)';
+    default:         return 'none';
+  }
+}
+
+function BabyPhotoFace({ expression, photoDataUrl }: { expression: Expression; photoDataUrl: string }) {
+  const filter = getPhotoFilter(expression);
+  const sickTint = expression === 'sick';
+
+  return (
+    <div className="relative" style={{ width: 180, height: 200 }}>
+      {/* 顔写真（円形マスク） */}
+      <div
+        className="absolute left-1/2 rounded-full overflow-hidden"
+        style={{
+          width: 170,
+          height: 170,
+          top: 10,
+          transform: 'translateX(-50%)',
+          border: '4px solid #ffe0c2',
+          boxShadow: '0 4px 10px rgba(0,0,0,0.08)',
+          background: '#f5f0eb',
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={photoDataUrl}
+          alt=""
+          className="w-full h-full object-cover"
+          style={{ filter }}
+          draggable={false}
+        />
+        {/* 具合悪い時の青緑ティント */}
+        {sickTint && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'radial-gradient(circle at 50% 70%, rgba(120, 180, 160, 0.25), rgba(120, 180, 160, 0))' }}
+          />
+        )}
+        {/* 寝てる時の暗め */}
+        {expression === 'sleeping' && (
+          <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(30, 30, 80, 0.15)' }} />
+        )}
+        {/* ほっぺ（嬉しい/通常/ハングリー時） */}
+        {(expression === 'happy' || expression === 'normal' || expression === 'hungry') && (
+          <>
+            <div className="absolute rounded-full" style={{ left: '12%', top: '60%', width: 28, height: 20, background: '#ff8fa3', opacity: 0.45, filter: 'blur(2px)' }} />
+            <div className="absolute rounded-full" style={{ right: '12%', top: '60%', width: 28, height: 20, background: '#ff8fa3', opacity: 0.45, filter: 'blur(2px)' }} />
+          </>
+        )}
+      </div>
+
+      {/* 涙（泣いてる時） */}
+      {expression === 'crying' && (
+        <>
+          <div className="absolute" style={{ left: '22%', top: '55%', width: 10, height: 18, background: '#87ceeb', opacity: 0.85, borderRadius: '50% 50% 50% 50% / 70% 70% 30% 30%', animation: 'baby-cry 0.4s infinite' }} />
+          <div className="absolute" style={{ right: '22%', top: '55%', width: 10, height: 18, background: '#87ceeb', opacity: 0.85, borderRadius: '50% 50% 50% 50% / 70% 70% 30% 30%', animation: 'baby-cry 0.4s infinite' }} />
+        </>
+      )}
+
+      {/* 寝てるマーク */}
+      {expression === 'sleeping' && (
+        <div className="absolute" style={{ right: -5, top: 0 }}>
+          <span style={{ fontSize: 16, color: '#8b7355', opacity: 0.6, position: 'absolute', left: 0, top: 40, fontWeight: 'bold' }}>z</span>
+          <span style={{ fontSize: 20, color: '#8b7355', opacity: 0.5, position: 'absolute', left: 10, top: 20, fontWeight: 'bold' }}>z</span>
+          <span style={{ fontSize: 26, color: '#8b7355', opacity: 0.4, position: 'absolute', left: 22, top: -5, fontWeight: 'bold' }}>Z</span>
+        </div>
+      )}
+
+      {/* お腹すいた → 吹き出し */}
+      {expression === 'hungry' && (
+        <div className="absolute" style={{ right: -8, top: 0 }}>
+          <div
+            className="flex items-center justify-center rounded-full"
+            style={{ width: 44, height: 36, background: 'white', border: '1.5px solid #e0d0c0' }}
+          >
+            <span style={{ fontSize: 22 }}>🍼</span>
+          </div>
+        </div>
+      )}
+
+      {/* 病気 → 体温計 + マスク */}
+      {expression === 'sick' && (
+        <>
+          <div className="absolute" style={{ right: 8, top: 100, transform: 'rotate(-25deg)', fontSize: 28 }}>🌡️</div>
+          <div className="absolute" style={{ left: '50%', top: '55%', transform: 'translateX(-50%)', fontSize: 50, opacity: 0.88 }}>😷</div>
+        </>
+      )}
+
+      {/* 汚い → モヤモヤ */}
+      {expression === 'dirty' && (
+        <>
+          <div className="absolute" style={{ left: 0, top: 50, fontSize: 20, opacity: 0.75 }}>💦</div>
+          <div className="absolute" style={{ right: 0, top: 30, fontSize: 18, opacity: 0.75 }}>💦</div>
+        </>
+      )}
+
+      {/* 悲しい → しずく目の下 */}
+      {expression === 'sad' && (
+        <div className="absolute" style={{ left: '50%', top: '18%', transform: 'translateX(-50%)', fontSize: 16, opacity: 0.6 }}>💧</div>
+      )}
+
+      {/* 嬉しい → キラキラ */}
+      {expression === 'happy' && (
+        <>
+          <div className="absolute animate-sparkle" style={{ left: 10, top: 30, fontSize: 20 }}>✨</div>
+          <div className="absolute animate-sparkle" style={{ right: 10, top: 10, fontSize: 16, animationDelay: '0.2s' }}>✨</div>
+          <div className="absolute animate-sparkle" style={{ right: 20, bottom: 30, fontSize: 18, animationDelay: '0.4s' }}>⭐</div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function getStatusHint(expression: Expression): string {
   switch (expression) {
     case 'hungry': return 'おなかすいたよ〜';
@@ -279,7 +404,7 @@ function getStatusHint(expression: Expression): string {
   }
 }
 
-export function BabySprite({ stage, gender, isCrying, isSick, status, actionFeedback }: BabySpriteProps) {
+export function BabySprite({ stage, gender, isCrying, isSick, status, actionFeedback, photoDataUrl }: BabySpriteProps) {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
 
@@ -300,7 +425,11 @@ export function BabySprite({ stage, gender, isCrying, isSick, status, actionFeed
     <div className="relative flex flex-col items-center justify-center py-4">
       {/* 赤ちゃん本体 */}
       <div className={`relative ${animClass}`}>
-        <BabyFaceSVG expression={expression} stage={stage} gender={gender} />
+        {photoDataUrl ? (
+          <BabyPhotoFace expression={expression} photoDataUrl={photoDataUrl} />
+        ) : (
+          <BabyFaceSVG expression={expression} stage={stage} gender={gender} />
+        )}
       </div>
 
       {/* ステータスヒント */}

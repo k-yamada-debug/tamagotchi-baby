@@ -3,20 +3,22 @@
 import { useState, useRef, useEffect } from 'react';
 import { LifeStage, StatusValues } from '../types';
 
+export interface ChatMessage {
+  id: number;
+  sender: 'parent' | 'baby';
+  text: string;
+  timestamp: number;
+}
+
 interface MessagePanelProps {
   stage: LifeStage;
   status: StatusValues;
   babyName: string;
   isSick: boolean;
   isCrying: boolean;
+  messages: ChatMessage[];
+  onMessagesChange: (updater: (prev: ChatMessage[]) => ChatMessage[]) => void;
   onClose: () => void;
-}
-
-interface ChatMessage {
-  id: number;
-  sender: 'parent' | 'baby';
-  text: string;
-  timestamp: number;
 }
 
 function pick<T>(arr: T[]): T {
@@ -479,20 +481,8 @@ const QUICK_REPLIES: Record<LifeStage, string[]> = {
   middleSchool: ['おかえり', '元気？', 'がんばってね', 'ごはんできたよ'],
 };
 
-export function MessagePanel({ stage, status, babyName, isSick, isCrying, onClose }: MessagePanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 0,
-      sender: 'baby',
-      text: stage === 'newborn' ? 'ばぶ〜' :
-        stage === 'infant' ? 'あばー！' :
-          stage === 'toddler' ? 'ママ〜！' :
-            stage === 'preschooler' ? 'ママ、おはなししよ！' :
-              stage === 'elementary' ? 'ママ、聞いて！' :
-                '…なに？',
-      timestamp: Date.now(),
-    },
-  ]);
+export function MessagePanel({ stage, status, babyName, isSick, isCrying, messages, onMessagesChange, onClose }: MessagePanelProps) {
+  const setMessages = onMessagesChange;
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);

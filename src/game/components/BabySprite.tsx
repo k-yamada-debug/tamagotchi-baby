@@ -266,37 +266,85 @@ function BabyFaceSVG({ expression, stage, gender }: {
   );
 }
 
-// 写真版の顔: 表情に応じてフィルタ・装飾を合成
-function getPhotoFilter(expression: Expression): string {
+// 写真版の顔: 表情に応じて写真そのものに強めのフィルタ＋ブレンドで変化をつける
+interface PhotoStyle {
+  filter: string;
+  tintColor: string | null; // overlay color (mix-blend: multiply for illness look)
+  tintOpacity: number;
+  shake?: boolean;
+}
+
+function getPhotoStyle(expression: Expression): PhotoStyle {
   switch (expression) {
-    case 'sick':     return 'saturate(0.5) brightness(0.92) hue-rotate(80deg)';
-    case 'sleeping': return 'brightness(0.85) blur(0.3px)';
-    case 'tired':    return 'brightness(0.92) saturate(0.85)';
-    case 'crying':   return 'saturate(1.1) brightness(0.98)';
-    case 'sad':      return 'saturate(0.75) brightness(0.95)';
-    case 'hungry':   return 'saturate(0.9) brightness(0.97)';
-    case 'dirty':    return 'saturate(0.7) sepia(0.15) brightness(0.93)';
-    case 'happy':    return 'saturate(1.2) brightness(1.05) contrast(1.05)';
-    default:         return 'none';
+    case 'sick':
+      return {
+        filter: 'saturate(0.55) brightness(0.9) hue-rotate(60deg) contrast(0.95)',
+        tintColor: '#8fd3a8',
+        tintOpacity: 0.35,
+      };
+    case 'sleeping':
+      return {
+        filter: 'brightness(0.7) saturate(0.7) blur(0.6px)',
+        tintColor: '#29345e',
+        tintOpacity: 0.3,
+      };
+    case 'tired':
+      return {
+        filter: 'brightness(0.85) saturate(0.7) contrast(0.95)',
+        tintColor: '#6b5c8a',
+        tintOpacity: 0.18,
+      };
+    case 'crying':
+      return {
+        filter: 'saturate(1.25) contrast(1.1) brightness(0.97)',
+        tintColor: '#ff8a9c',
+        tintOpacity: 0.2,
+        shake: true,
+      };
+    case 'sad':
+      return {
+        filter: 'saturate(0.55) brightness(0.95) contrast(0.95)',
+        tintColor: '#5c7cb0',
+        tintOpacity: 0.22,
+      };
+    case 'hungry':
+      return {
+        filter: 'saturate(0.8) brightness(0.95) contrast(1.05)',
+        tintColor: '#d4a34a',
+        tintOpacity: 0.1,
+      };
+    case 'dirty':
+      return {
+        filter: 'saturate(0.65) sepia(0.4) brightness(0.9) contrast(1.05)',
+        tintColor: '#8b6f3a',
+        tintOpacity: 0.25,
+      };
+    case 'happy':
+      return {
+        filter: 'saturate(1.4) brightness(1.1) contrast(1.08)',
+        tintColor: '#ffc0cb',
+        tintOpacity: 0.08,
+      };
+    default:
+      return { filter: 'none', tintColor: null, tintOpacity: 0 };
   }
 }
 
 function BabyPhotoFace({ expression, photoDataUrl }: { expression: Expression; photoDataUrl: string }) {
-  const filter = getPhotoFilter(expression);
-  const sickTint = expression === 'sick';
+  const style = getPhotoStyle(expression);
+  const size = 240;
 
   return (
-    <div className="relative" style={{ width: 180, height: 200 }}>
-      {/* 顔写真（円形マスク） */}
+    <div
+      className="relative"
+      style={{ width: size, height: size }}
+    >
+      {/* 写真本体 */}
       <div
-        className="absolute left-1/2 rounded-full overflow-hidden"
+        className={`absolute inset-0 rounded-3xl overflow-hidden ${style.shake ? 'animate-cry' : ''}`}
         style={{
-          width: 170,
-          height: 170,
-          top: 10,
-          transform: 'translateX(-50%)',
           border: '4px solid #ffe0c2',
-          boxShadow: '0 4px 10px rgba(0,0,0,0.08)',
+          boxShadow: '0 6px 16px rgba(0,0,0,0.12)',
           background: '#f5f0eb',
         }}
       >
@@ -305,86 +353,216 @@ function BabyPhotoFace({ expression, photoDataUrl }: { expression: Expression; p
           src={photoDataUrl}
           alt=""
           className="w-full h-full object-cover"
-          style={{ filter }}
+          style={{ filter: style.filter, transition: 'filter 0.5s ease' }}
           draggable={false}
         />
-        {/* 具合悪い時の青緑ティント */}
-        {sickTint && (
+
+        {/* 感情ティント: 写真全体に色を乗せて表情を変える */}
+        {style.tintColor && (
           <div
             className="absolute inset-0 pointer-events-none"
-            style={{ background: 'radial-gradient(circle at 50% 70%, rgba(120, 180, 160, 0.25), rgba(120, 180, 160, 0))' }}
+            style={{
+              background: style.tintColor,
+              opacity: style.tintOpacity,
+              mixBlendMode: 'multiply',
+              transition: 'opacity 0.5s ease',
+            }}
           />
         )}
-        {/* 寝てる時の暗め */}
-        {expression === 'sleeping' && (
-          <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(30, 30, 80, 0.15)' }} />
-        )}
-        {/* ほっぺ（嬉しい/通常/ハングリー時） */}
-        {(expression === 'happy' || expression === 'normal' || expression === 'hungry') && (
+
+        {/* 嬉しい時: 頬染めをグラデーションで追加（写真の上から） */}
+        {expression === 'happy' && (
           <>
-            <div className="absolute rounded-full" style={{ left: '12%', top: '60%', width: 28, height: 20, background: '#ff8fa3', opacity: 0.45, filter: 'blur(2px)' }} />
-            <div className="absolute rounded-full" style={{ right: '12%', top: '60%', width: 28, height: 20, background: '#ff8fa3', opacity: 0.45, filter: 'blur(2px)' }} />
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: '10%', top: '55%', width: '25%', height: '20%',
+                background: 'radial-gradient(ellipse at center, rgba(255,143,163,0.55), transparent 70%)',
+              }}
+            />
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                right: '10%', top: '55%', width: '25%', height: '20%',
+                background: 'radial-gradient(ellipse at center, rgba(255,143,163,0.55), transparent 70%)',
+              }}
+            />
+            {/* 笑顔の口元を写真の上に描画 */}
+            <svg
+              className="absolute pointer-events-none"
+              style={{ left: '25%', bottom: '15%', width: '50%', height: '20%' }}
+              viewBox="0 0 100 40"
+            >
+              <path d="M 10 10 Q 50 38 90 10" stroke="#d4726a" strokeWidth="4" fill="none" strokeLinecap="round" />
+            </svg>
+          </>
+        )}
+
+        {/* 悲しい/泣いてる時: 写真の目の位置に涙 */}
+        {(expression === 'crying' || expression === 'sad') && (
+          <>
+            <div
+              className="absolute"
+              style={{
+                left: '28%', top: '45%',
+                width: 10, height: 22,
+                background: 'linear-gradient(180deg, rgba(135,206,235,0.6), rgba(135,206,235,0.95))',
+                borderRadius: '50% 50% 50% 50% / 30% 30% 70% 70%',
+                animation: expression === 'crying' ? 'tear-drop 1.2s infinite' : undefined,
+                boxShadow: '0 0 4px rgba(135,206,235,0.6)',
+              }}
+            />
+            <div
+              className="absolute"
+              style={{
+                right: '28%', top: '45%',
+                width: 10, height: 22,
+                background: 'linear-gradient(180deg, rgba(135,206,235,0.6), rgba(135,206,235,0.95))',
+                borderRadius: '50% 50% 50% 50% / 30% 30% 70% 70%',
+                animation: expression === 'crying' ? 'tear-drop 1.2s infinite 0.3s' : undefined,
+                boxShadow: '0 0 4px rgba(135,206,235,0.6)',
+              }}
+            />
+            {expression === 'crying' && (
+              <svg
+                className="absolute pointer-events-none"
+                style={{ left: '30%', bottom: '20%', width: '40%', height: '15%' }}
+                viewBox="0 0 100 40"
+              >
+                <path d="M 10 30 Q 50 5 90 30" stroke="#b4423a" strokeWidth="4" fill="#ff5a6a" strokeLinecap="round" />
+              </svg>
+            )}
+          </>
+        )}
+
+        {/* 寝てる時: 瞼オーバーレイ + Z */}
+        {expression === 'sleeping' && (
+          <>
+            {/* 上半分を少し暗くして瞼感 */}
+            <div
+              className="absolute inset-x-0 top-0 pointer-events-none"
+              style={{
+                height: '60%',
+                background: 'linear-gradient(180deg, rgba(0,0,0,0.25), transparent)',
+              }}
+            />
+            {/* 閉じた目のライン */}
+            <svg
+              className="absolute pointer-events-none"
+              style={{ left: '15%', top: '40%', width: '70%', height: '15%' }}
+              viewBox="0 0 100 20"
+            >
+              <path d="M 5 10 Q 25 15 45 10" stroke="#2d1b0e" strokeWidth="3" fill="none" strokeLinecap="round" />
+              <path d="M 55 10 Q 75 15 95 10" stroke="#2d1b0e" strokeWidth="3" fill="none" strokeLinecap="round" />
+            </svg>
+          </>
+        )}
+
+        {/* 疲れてる時: 半目ライン */}
+        {expression === 'tired' && (
+          <svg
+            className="absolute pointer-events-none"
+            style={{ left: '15%', top: '40%', width: '70%', height: '10%' }}
+            viewBox="0 0 100 20"
+          >
+            <path d="M 5 5 Q 25 15 45 5" stroke="#2d1b0e" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.7" />
+            <path d="M 55 5 Q 75 15 95 5" stroke="#2d1b0e" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.7" />
+          </svg>
+        )}
+
+        {/* 病気: 口元にマスク */}
+        {expression === 'sick' && (
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              left: '20%', top: '55%', width: '60%', height: '30%',
+              background: 'linear-gradient(180deg, #fafafa, #e8e8e8)',
+              borderRadius: '45% 45% 40% 40% / 30% 30% 70% 70%',
+              boxShadow: 'inset 0 -2px 4px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.15)',
+              border: '1px solid #d0d0d0',
+            }}
+          />
+        )}
+
+        {/* 汚い時: 顔にほこり/土汚れ風のシミ */}
+        {expression === 'dirty' && (
+          <>
+            <div className="absolute" style={{ left: '20%', top: '62%', width: 22, height: 14, background: '#6b4423', opacity: 0.45, borderRadius: '50%', filter: 'blur(3px)' }} />
+            <div className="absolute" style={{ right: '25%', top: '35%', width: 16, height: 10, background: '#6b4423', opacity: 0.4, borderRadius: '50%', filter: 'blur(3px)' }} />
+            <div className="absolute" style={{ left: '45%', bottom: '25%', width: 18, height: 12, background: '#6b4423', opacity: 0.4, borderRadius: '50%', filter: 'blur(3px)' }} />
+          </>
+        )}
+
+        {/* お腹すいた: 頬をへこませる暗い影 */}
+        {expression === 'hungry' && (
+          <>
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: '8%', top: '55%', width: '20%', height: '25%',
+                background: 'radial-gradient(ellipse at center, rgba(80,60,40,0.35), transparent 70%)',
+              }}
+            />
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                right: '8%', top: '55%', width: '20%', height: '25%',
+                background: 'radial-gradient(ellipse at center, rgba(80,60,40,0.35), transparent 70%)',
+              }}
+            />
           </>
         )}
       </div>
 
-      {/* 涙（泣いてる時） */}
-      {expression === 'crying' && (
-        <>
-          <div className="absolute" style={{ left: '22%', top: '55%', width: 10, height: 18, background: '#87ceeb', opacity: 0.85, borderRadius: '50% 50% 50% 50% / 70% 70% 30% 30%', animation: 'baby-cry 0.4s infinite' }} />
-          <div className="absolute" style={{ right: '22%', top: '55%', width: 10, height: 18, background: '#87ceeb', opacity: 0.85, borderRadius: '50% 50% 50% 50% / 70% 70% 30% 30%', animation: 'baby-cry 0.4s infinite' }} />
-        </>
-      )}
+      {/* === 写真の外に装飾 === */}
 
       {/* 寝てるマーク */}
       {expression === 'sleeping' && (
-        <div className="absolute" style={{ right: -5, top: 0 }}>
-          <span style={{ fontSize: 16, color: '#8b7355', opacity: 0.6, position: 'absolute', left: 0, top: 40, fontWeight: 'bold' }}>z</span>
-          <span style={{ fontSize: 20, color: '#8b7355', opacity: 0.5, position: 'absolute', left: 10, top: 20, fontWeight: 'bold' }}>z</span>
-          <span style={{ fontSize: 26, color: '#8b7355', opacity: 0.4, position: 'absolute', left: 22, top: -5, fontWeight: 'bold' }}>Z</span>
+        <div className="absolute" style={{ right: -12, top: -12 }}>
+          <span style={{ fontSize: 20, color: '#8b7355', opacity: 0.7, position: 'absolute', left: 0, top: 50, fontWeight: 'bold' }}>z</span>
+          <span style={{ fontSize: 28, color: '#8b7355', opacity: 0.6, position: 'absolute', left: 15, top: 22, fontWeight: 'bold' }}>z</span>
+          <span style={{ fontSize: 36, color: '#8b7355', opacity: 0.5, position: 'absolute', left: 32, top: -10, fontWeight: 'bold' }}>Z</span>
         </div>
       )}
 
       {/* お腹すいた → 吹き出し */}
       {expression === 'hungry' && (
-        <div className="absolute" style={{ right: -8, top: 0 }}>
+        <div className="absolute" style={{ right: -18, top: -12 }}>
           <div
             className="flex items-center justify-center rounded-full"
-            style={{ width: 44, height: 36, background: 'white', border: '1.5px solid #e0d0c0' }}
+            style={{ width: 54, height: 44, background: 'white', border: '2px solid #e0d0c0' }}
           >
-            <span style={{ fontSize: 22 }}>🍼</span>
+            <span style={{ fontSize: 26 }}>🍼</span>
           </div>
         </div>
       )}
 
-      {/* 病気 → 体温計 + マスク */}
+      {/* 病気 → 体温計 */}
       {expression === 'sick' && (
-        <>
-          <div className="absolute" style={{ right: 8, top: 100, transform: 'rotate(-25deg)', fontSize: 28 }}>🌡️</div>
-          <div className="absolute" style={{ left: '50%', top: '55%', transform: 'translateX(-50%)', fontSize: 50, opacity: 0.88 }}>😷</div>
-        </>
+        <div className="absolute" style={{ right: -8, top: 20, transform: 'rotate(-25deg)', fontSize: 36 }}>🌡️</div>
       )}
 
       {/* 汚い → モヤモヤ */}
       {expression === 'dirty' && (
         <>
-          <div className="absolute" style={{ left: 0, top: 50, fontSize: 20, opacity: 0.75 }}>💦</div>
-          <div className="absolute" style={{ right: 0, top: 30, fontSize: 18, opacity: 0.75 }}>💦</div>
+          <div className="absolute" style={{ left: -10, top: 60, fontSize: 24, opacity: 0.85 }}>💦</div>
+          <div className="absolute" style={{ right: -10, top: 40, fontSize: 22, opacity: 0.85 }}>💦</div>
+          <div className="absolute" style={{ right: -15, bottom: 30, fontSize: 20, opacity: 0.75 }}>💨</div>
         </>
-      )}
-
-      {/* 悲しい → しずく目の下 */}
-      {expression === 'sad' && (
-        <div className="absolute" style={{ left: '50%', top: '18%', transform: 'translateX(-50%)', fontSize: 16, opacity: 0.6 }}>💧</div>
       )}
 
       {/* 嬉しい → キラキラ */}
       {expression === 'happy' && (
         <>
-          <div className="absolute animate-sparkle" style={{ left: 10, top: 30, fontSize: 20 }}>✨</div>
-          <div className="absolute animate-sparkle" style={{ right: 10, top: 10, fontSize: 16, animationDelay: '0.2s' }}>✨</div>
-          <div className="absolute animate-sparkle" style={{ right: 20, bottom: 30, fontSize: 18, animationDelay: '0.4s' }}>⭐</div>
+          <div className="absolute animate-sparkle" style={{ left: -5, top: 20, fontSize: 24 }}>✨</div>
+          <div className="absolute animate-sparkle" style={{ right: -5, top: 0, fontSize: 20, animationDelay: '0.2s' }}>✨</div>
+          <div className="absolute animate-sparkle" style={{ right: 0, bottom: 20, fontSize: 22, animationDelay: '0.4s' }}>⭐</div>
         </>
+      )}
+
+      {/* 悲しい/泣いてる → 追加しずく */}
+      {expression === 'sad' && (
+        <div className="absolute" style={{ left: '50%', top: -10, transform: 'translateX(-50%)', fontSize: 20, opacity: 0.7 }}>💧</div>
       )}
     </div>
   );

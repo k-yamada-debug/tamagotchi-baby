@@ -7,7 +7,7 @@ interface StartScreenProps {
 }
 
 // 画像をリサイズして data URL (JPEG) に変換
-async function resizeImageToDataUrl(file: File, size = 320, quality = 0.85): Promise<string> {
+async function resizeImageToDataUrl(file: File, size = 512, quality = 0.88): Promise<string> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(size / bitmap.width, size / bitmap.height, 1);
   const w = Math.round(bitmap.width * scale);
@@ -67,23 +67,23 @@ export function StartScreen({ onStart }: StartScreenProps) {
             <label className="block text-sm mb-2 text-left" style={{ color: 'var(--text-secondary)' }}>
               おかお写真（任意）
             </label>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col items-center gap-3">
               <div
-                className="w-20 h-20 rounded-full flex items-center justify-center overflow-hidden shrink-0 border-2"
+                className="w-40 h-40 rounded-2xl flex items-center justify-center overflow-hidden border-2"
                 style={{ borderColor: 'var(--border)', background: '#f5f0eb' }}
               >
                 {photoDataUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={photoDataUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-3xl">📷</span>
+                  <span className="text-5xl">📷</span>
                 )}
               </div>
-              <div className="flex-1 flex flex-col gap-2">
+              <div className="flex gap-2 w-full">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="py-2 px-3 rounded-lg border-2 text-sm active:scale-95 transition-transform"
+                  className="flex-1 py-2 px-3 rounded-lg border-2 text-sm active:scale-95 transition-transform"
                   style={{ borderColor: 'var(--border)' }}
                 >
                   {photoDataUrl ? '写真を変更' : '写真を選ぶ'}
@@ -92,7 +92,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
                   <button
                     type="button"
                     onClick={() => setPhotoDataUrl(null)}
-                    className="py-1.5 px-3 rounded-lg text-xs active:scale-95 transition-transform"
+                    className="py-2 px-3 rounded-lg text-xs active:scale-95 transition-transform"
                     style={{ color: 'var(--text-secondary)', background: '#f5f0eb' }}
                   >
                     削除
@@ -113,7 +113,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
               </p>
             )}
             <p className="text-[11px] mt-2 text-left" style={{ color: 'var(--text-secondary)' }}>
-              顔写真を設定すると赤ちゃんの顔になります
+              アップロードすると、状況に応じて写真自体の表情が変わります
             </p>
           </div>
 

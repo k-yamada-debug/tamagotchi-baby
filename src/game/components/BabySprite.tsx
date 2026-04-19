@@ -370,26 +370,6 @@ function BabyPhotoFace({ expression, photoDataUrl }: { expression: Expression; p
           />
         )}
 
-        {/* 嬉しい時: 頬染めをグラデーションで追加（写真の上から） */}
-        {expression === 'happy' && (
-          <>
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                left: '10%', top: '55%', width: '25%', height: '20%',
-                background: 'radial-gradient(ellipse at center, rgba(255,143,163,0.55), transparent 70%)',
-              }}
-            />
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                right: '10%', top: '55%', width: '25%', height: '20%',
-                background: 'radial-gradient(ellipse at center, rgba(255,143,163,0.55), transparent 70%)',
-              }}
-            />
-          </>
-        )}
-
         {/* 悲しい/泣いてる時: 写真の目の位置に涙 */}
         {(expression === 'crying' || expression === 'sad') && (
           <>

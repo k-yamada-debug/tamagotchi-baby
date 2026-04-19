@@ -156,7 +156,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
         <div className="border-t pt-6" style={{ borderColor: 'var(--border)' }}>
           <h2 className="font-bold mb-4">あたらしくはじめる</h2>
 
-          {/* 顔写真アップロード */}
+          {/* 顔写真アップロード（任意） */}
           <div className="mb-4">
             <label className="block text-sm mb-2 text-left" style={{ color: 'var(--text-secondary)' }}>
               おかお写真

@@ -4,8 +4,9 @@ import { CARE_ACTIONS, getStageConfig } from './constants';
 export function applyCareAction(state: GameState, actionType: CareActionType, now: number): GameState {
   const stageConfig = getStageConfig(state.currentStage);
 
-  // このステージで利用可能か確認
-  if (!stageConfig.availableActions.includes(actionType)) {
+  // 病院は全ステージで常に利用可能（病気を治すため）
+  const isAvailable = actionType === 'doctor' || stageConfig.availableActions.includes(actionType);
+  if (!isAvailable) {
     return state;
   }
 
@@ -32,9 +33,17 @@ export function applyCareAction(state: GameState, actionType: CareActionType, no
   };
 
   // 病院アクション: 病気を治す
-  if (actionType === 'doctor' && state.isSick) {
-    newState.isSick = false;
-    newState.sickSince = null;
+  if (actionType === 'doctor') {
+    if (state.isSick) {
+      newState.isSick = false;
+      newState.sickSince = null;
+      // 病気で下がっていた機嫌と体力を回復
+      newState.status = {
+        ...newState.status,
+        mood: Math.min(100, newState.status.mood + 20),
+        energy: Math.min(100, newState.status.energy + 20),
+      };
+    }
     // 病気イベントがアクティブなら解消
     if (newState.activeEvent?.type === 'sickness') {
       newState.activeEvent = null;

@@ -50,7 +50,15 @@ export function GameScreen({ state, onCare, onResolveEvent, onSetTimeScale, onRe
   }, [state.activeEvent, onResolveEvent]);
 
   return (
-    <div className="min-h-dvh flex flex-col max-w-lg mx-auto px-2 py-2 gap-2">
+    <div
+      className="min-h-dvh flex flex-col max-w-lg mx-auto gap-2"
+      style={{
+        paddingTop: 'calc(env(safe-area-inset-top) + 0.5rem)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)',
+        paddingLeft: 'calc(env(safe-area-inset-left) + 0.5rem)',
+        paddingRight: 'calc(env(safe-area-inset-right) + 0.5rem)',
+      }}
+    >
       {/* ヘッダー */}
       <StageInfo
         stage={state.currentStage}
@@ -74,9 +82,10 @@ export function GameScreen({ state, onCare, onResolveEvent, onSetTimeScale, onRe
         {/* メッセージボタン */}
         <button
           onClick={() => setShowMessages(true)}
-          className="absolute bottom-3 right-3 w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-md transition-transform hover:scale-110"
-          style={{ background: 'var(--accent)', color: 'white' }}
+          className="absolute bottom-3 right-3 w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-lg active:scale-90 transition-transform"
+          style={{ background: 'var(--accent)', color: 'white', touchAction: 'manipulation' }}
           title="おはなしする"
+          aria-label="おはなしする"
         >
           💬
         </button>
